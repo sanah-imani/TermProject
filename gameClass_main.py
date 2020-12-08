@@ -1,100 +1,41 @@
-###################################################
-#This code has been written by Sanah Imani (simani)
-#All commented code may not be fully runnable yet
-###################################################
 from cmu_112_graphics import *
 import os
 import time
 import random
+import bisect
+import numpy as np
 import math
+import requests
 
-#import requests
-#from bs4 import BeautifulSoup
+#my classes
+from functions import Function, polynomial
+from terrain import Terrain
+from character import Player
+#from beautifulsoup4 import BeautifulSoup 
 # other important functions
 #Source: https://www.cs.cmu.edu/~112/notes/
 #notes-data-and-operations.html#FloatingPointApprox
+
+#Modal App Structure: https://www.cs.cmu.edu/~112/notes/notes-animations-part3.html
+#Midpoint Displacement Reference: https://www.sfu.ca/~rpyke/335/projects/tsai/report1.htm
+#Stickman figures: https://github.com/kidscancode (Only images sourced)
+
+
 def almostEqual(d1, d2):
     epsilon = 10**-10
     return (abs(d2 - d1) < epsilon)
-"""
-#place Stars - self refers to the terrain object
-#this is capped at 4 stars per level
-def placeStars(self):
-    potentialPlaces = []
-    for row in range(len(self.terrainFill)):
-        for col in range(len(self.terrainFill[0])):
-            if self.terrainFill[row][col] == False
-                and closeToLand(self, row, col):
-                    potentialPlaces.append((row,col))
 
-    if len(potentialPlaces) < 4:
-        return potentialPlaces
-    else:
-        return random.sample(potentialPlaces, 4)
+def colorCode(r,b,g):
+        colorval = "#%02x%02x%02x" % (r, g, b)
+        return colorval
 
-#place spikes:
-def placeSpikes(self):
-    potentialPlaces = []
-    for row in range(len(self.terrainFill)):
-        for col in range(len(self.terrainFill[0])):
-            if self.terrainFill[row][col] == True and
-                closeToAir(self,row,col):
-                    potentialPlaces.append((row,col))
-    if len(potentialPlaces) < 6:
-        return potentialPlaces
-    else:
-        return random.sample(potentialPlaces,6)
-    
-#check if character collides into stars
-#self refers to the character object
-def collideStars(self, starPos):
-    starRadius = 10
-    for i in range(len(starPos)):
-        if distance(starPos[i][0], self.posX) < starRadius
-            and distance(starPos[i][1], self.posY) < starRadius:
-            starPos.pop(i)
-            self.player.score += 10
-            self.player.stars += 1
-#checking if the player hit a spike
-def collideSpike(self, spikePos):
-    deletePos = []
-    for pointsL in spikePos:
-        if pointsL[0] <= self.player.posX <= pointsL[2] and
-            points[5] <= self.player.posX <= pointsL[1]:
-                ind = spikePos.find(pointsL)
-                deletePos.append(ind)
-                self.player.spikes += 1
-    for ind in deletePos:
-        spikePos.pop(ind)
-#check if ANYTHING touches TNT
-def collideBox(self,boxPos):
-    deletePos = []
-    #character
-    for pointsL in boxPos:
-        if pointsL[0] <= self.player.posX <= pointsL[4]
-            and pointsL[1] <= self.player.posY <= pointsL[5]:
-                ind = boxPos.find(pointsL)
-                deletePos.append(ind)
-                self.player.TNTs += 1
-    for ind in deletePos:
-        boxPos.pop(ind)
+def solveQuad(a,b,c):
+    discriminant = ((b**2 - 4*a*c)**0.5)
+    x1 = (-b + discriminant)/(2*a)
+    x2 = (-b - discriminant)/(2*a)
+    return random.choice([x1, x2])
 
-    deletePos = []
-    #functions start and stop points
-    
-    #function
-    for pointsL in boxPos:
-        if pointsL[0] <= self.function <= pointsL[4]
-            and pointsL[1] <= self.player.posY <= pointsL[5]:
-                ind = boxPos.find(pointsL)
-                deletePos.append(ind)
-                self.player.TNTs += 1
-    for ind in deletePos:
-        boxPos.pop(ind)
-"""
-"""
-# function definitions
-def addFunctionDescription(self, query):
+def addFunctionDescription(query):
     description = ""
     q = query.replace('', '%20')
     URL = 'www.dictionary.com' + q
@@ -107,399 +48,77 @@ def addFunctionDescription(self, query):
 
     results = results.split("},")
     return results
-"""
-class Function(object):
-    functions = ['Trignometry', 'Conic Sections', 'Polynomials','Piecewise']
-    myFunctions = {}
-    params = {'Trignometry': ['A','B', 'C'],
-              'Circle': ['a','b','r'],
-              'Ellipse': ['a','b'],
-              'Polynomials': ['degree'],
-              #might remove this 
-              'Custom': []
-              }
-    def __init__(self, key, category, startCoords, endCoords, showCoords):
-        self.startCoords = startCoords
-        self.endCoords = endCoords
-        self.showCoords = showCoords
-        self.key = key
-        self.category = category
-        self.move = True
-    def getFunctions(self):
-        return self.functions
-    #change position???
-    def placeFunction(function, terrain):
-        allCoordsX = function.getCoords()
-        for (funcX, funcY) in allCoords:
-            for (pointX,pointY) in terrain.groundCoords:
-                if almostEqual(funcX, pointX) and almostEqual(funcY, pointY):
-                    self.move = False
-    def isMoving(self):
-        return self.move
-    def getTransformations(self):
-        return self.transformation
-    def updateFunction(self, transformation):
-        #here transformation is a four-length list
-        #consisting of vertical, horizontal compressions/stretches
-        #and horizontal and vertical movement
-        self.transformation = transformation
-    def addFunction(name,function):
-        if isinstance(function, Function):
-            Function.myFunctions[name] = function
-    def removeFunction(name, function):
-        if name in myFunctions:
-            Function.myFunctions.pop(name,None)
-
-#polynomial
-class polynomial(Function):
-    def __init__(self, key, category, startCoords, endCoords, showCoords, degree, coeffs, transformation):
-        super().__init__(key, category, startCoords, endCoords, showCoords)
-        self.degree = degree
-        self.coeffs = coeffs
-        self.transformation = transformation
-    def __repr__(self):
-        finalString = ""
-        for i in range(self.degree,-1, -1):
-            alphInd = self.degree - i
-            coeffAlph = string.ascii_uppercase[alphInd]
-            finalString += coeffAlph + f'x^{i}' + "+ "
-        #stripping off the laast two characters
-        finalString = finalString[:-2]
-        return finalString
-    def getCoords(self):
-        x = np.arrange(showCoords[0], showCoords[1],0.1)
-        y = []
-        for i in range(len(x)):
-            intermed = 0
-            for j in range(len(self.coeffs)+1):
-                intermed += (self.coeffs[j]*(x[i])**(self.degree-j))
-            y += [intermed]
-        allCoords = []
-        for i in range(len(x)):
-            allCoords.append(x[i],y[i])
-        return allCoords
-    def getDerivative(self,pointX):
-        finalAns = 0
-        for i in range(len(self.coeffs)+1):
-            finalAns += (self.degree-j)*(self.coeffs[j])*(pointX**(self.degree-j-1))
-        return finalAns
-#trignometry
-class sine(Function):
-    def __init__(self,  key, category, startCoords, endCoords, showCoords, A, B, C, transformation):
-        super().__init__(key, category, startCoords, endCoords, showCoords)
-        self.A = A
-        self.B = B
-        self.C = C
-        self.transformation = transformation
-    def getCoords(self):
-        x = np.arrange(showCoords[0], showCoords[1],0.1)
-        y = np.sin(x)
-        allCoords = []
-        for i in range(len(x)):
-            allCoords.append(x[i],y[i])
-        return allCoords
-    
-    def __repr__(self):
-        return "Asin(Bx) + C"
-
-    def getDerivative(self,pointX):
-        finalAns = self.A*self.B*np.cos(pointX)
-        return finalAns
-
-class cos(Function):
-    def __init__(self, startCoords, endCoords, showCoords, A, B, C, transformation):
-        super().__init__(key, category, startCoords, endCoords, showCoords)
-        self.A = A
-        self.B = B
-        self.C = C
-        self.transformation = transformation
-    def getCoords(self):
-        x = np.arrange(showCoords[0], showCoords[1],0.1)
-        y = np.sin(x)
-        allCoords = []
-        for i in range(len(x)):
-            allCoords.append(x[i],y[i])
-        return allCoords
-    def __repr__(self):
-        return "Acos(Bx) + C"
-    def instructions(self):
-        return "Please enter the values of A, B, and C"
-    def getDerivative(self,pointX):
-        finalAns = -self.A*self.B*np.sin(pointX)
-        return finalAns
-
-#conic sections
-class conic(Function):
-    conicsDict = {"circle" : "(x - a)**2 + (y - b)**2 = r**2",
-         "ellipse": "(x**2/a**2) + (y**2/b**2) = 1"}
-    def __repr__(self):
-        for key in conicsDict:
-            if key == self.key:
-                return conicsDict[key]
-    def __init__(self, startCoords, endCoords, showCoords, key, coeffs, transformation,rolling=False):
-        super().__init__(key, category, startCoords, endCoords, showCoords)
-        self.key = key
-        self.coeffs = coeffs
-        self.transformation = transformation
-        self.rolling = rolling
-    def getCoords(self):
-        if (self.key == "circle"):
-            x = np.arrange(showCoords[0], showCoords[1],0.1)
-            y = []
-            for i in range(len(x)):
-                tempY = (self.coeffs[2]**2 - (x[i] - self.coeffs[0]**2)) **0.5 + self.coeffs[1]
-                y.append(tempY)
-            allCoords = []
-            for i in range(len(x)):
-                allCoords.append(x[i],y[i])
-            return allCoords
-        if (self.key == "ellipse"):
-            x = np.arrange(showCoords[0], showCoords[1],0.1)
-            y = []
-            for i in range(len(x)):
-                tempY = (self.coeffs[0]**2  * (1 - (x[i]/self.coeffs[1])**2))**0.5
-                y.append(tempY)
-            allCoords = []
-            for i in range(len(x)):
-                allCoords.append(x[i],y[i])
-            return allCoords
-    def getDerivative(self,pointX, pointY):
-        if (self.key == "circle"):
-            try:
-                return -(2*(pointX-self.coeffs[0]))/(2*((pointY-self.coeffs[1]) - 1))
-            except ZeroDivisionError:
-                return None
-        else:
-            try:
-                return -((self.coeffs[1]**2)*pointX)/((self.coeffs[0]**2)*pointY)
-            except ZeroDivisionError:
-                return None
-    
-
-#player class
-class Player:
-    def __init__(self):
-        self.frames_l = [PhotoImage(file="stickman/stick-L1.gif"),
-                         PhotoImage(file="stickman/stick-L2.gif"),
-                         PhotoImage(file="stickman/stick-L3.gif"),
-                         PhotoImage(file="stickman/stick-L4.gif")]
-        self.frames_r = [PhotoImage(file="stickman/stick-R1.gif"),
-                         PhotoImage(file="stickman/stick-R2.gif"),
-                         PhotoImage(file="stickman/stick-R3.gif"),
-                         PhotoImage(file="stickman/stick-R4.gif")]
-        """
-        self.image = canvas.create_image(WIDTH / 2, HEIGHT-100, anchor=NW,
-                                         image=self.frames_l[0])
-        self.speedx = 0
-        self.speedy = 0
-        canvas.bind_all("<KeyPress-Left>", self.move)
-        canvas.bind_all("<KeyPress-Right>", self.move)
-        canvas.bind_all("<KeyPress-space>", self.jump)
-        canvas.bind_all("<KeyRelease-Left>", self.stop)
-        canvas.bind_all("<KeyRelease-Right>", self.stop)
-        self.current_frame = 0
-        self.last_time = time.time()
-        """
-        self.currLevel = 0
-        self.levelsCompleted = []
-        self.stars = 0
-        self.score = 0
-        self.spikes = 0
-        self.TNTs = 0
-        self.myFunctions = {}
-        self.currFunction = None
-        self.currDelete = None
-        #we only have a certain number of functions
-        self.functionsStock = [4]*6
-        self.isRunning = False
-        self.posX = None
-        self.posY = None
-        self.feetX = None
-        self.feetY = None
-        self.name = "player1"
-        #states
-        self.dead = False
-        self.won = False
-class Terrain(object):
-    def __init__(self, width, height, chunk_size, level):
-        #initialisation
-        self.spikesLocs = []
-        self.starsLocs = []
-        self.TNTLocs = []
-        self.holes = []
-        self.terrainFill = []
-        self.terrainPixels = []
-        self.terrainDims = [[width,height]]
-        self.setTerrain(self.terrainDims[0][level-1],self.terrainDims[0][level-1], 5)
-
-    def setTerrain(self, width, height, chunk_size):
-        numRows = height//chunk_size
-        numCols = width//chunk_size
-        terrainArr = [([0] * numCols) for row in range(numRows)]
-        row = 30 
-        for i in range(width//(2*chunk_size)):
-            terrainArr[row][i] = 1
-        self.terrainPixels += terrainArr
-    #figure out if 2D or 3D...sample a 2D slice
-def run(self,texture,seed):
-    self.seeds = [20,30,40,50,60,70,80,90,100,110]
-    self.textures = [3, 2, 1.5, 1.2, 1.0, 1.3, 1.1, 0.9, 1.0, 1.0]
-    self.num_iterations = [getIterations(chunk_sizes[i]) for i in range(9)]
-    terrainFillRaw = []
-    for i in range(len(self.seeds)):
-        beginCoords = [(100, random.randint(300,600)), (700, random.randint(300,600))]
-        terrainFillRaw += midpointDisplacement(beginCoords, 200, 600, self.textures[i], self.seeds[i], self.num_iterations[i])
-    self.terrainPixels = terrainFillRaw
-
-def midpointDisplacement(beginCoords, minHeight, maxHeight, texture, seed, totIterations):
-    startX = beginCoords[0][0]
-    startY = beginCoords[0][1]
-    endX = beginCoords[0][0]
-    endY = beginCoords[0][1]
-    #sanitising the texture (put in required range)
-    if texture > 3.0:
-        texture = 3.0
-    elif texture < 0.5:
-        texture = 0.5
-    #setting an initial displacement
-    displacement = (startY + endY)/2
-    #segment points list (2D list) with tuples
-    seg_points = [beginCoords[0], beginCoords[1]]
-    currIteration = 0
-    random.seed(seed)
-    while currIteration <= totIterations:
-        for i in range(len(seg_points)-1):
-            disp_type = random.randint(0,1)
-            midpointX = seg_points[i][0] + seg_points[i+1][0]
-            midpointY = seg_points[i][1] + seg_points[i+1][1]
-            if disp_type == 0:
-                #symmetric bounds used
-                midpointY += random.uniform(-displacement,displacement)
-                if midpointY > maxHeight:
-                    midPointY = maxHeight
-                elif midPoint < minHeight:
-                    midPointX = minHeight
-            else:
-                gradient = (seg_points[i+1][1] - seg_points[i][1])/(seg_points[i+1][1] - seg_points[i][0])
-                normalGrad = -1/gradient
-                c = midpointY - (normalGrad*midpointX)
-                change = random.uniform(-displacement,displacement)
-                a = 1 + normalGrad**2
-                b = -(2*midpointX) + (4*(c - midpointY))
-                c = (midpointX**2) + (c**2) - (change**2)
-                midPointX = solveQuad(a,b,c)
-                midPointY = (normalGrad * x) + c
-                if midpointY > maxHeight:
-                    midPointY = maxHeight
-                elif midPoint < minHeight:
-                    midPointX = minHeight
-            midpoint = (midPointX, midPointY)
-            bisect.insort(seg_points, midpoint)
-            
-        vertical_displacement *= 2 ** (-texture)
-        iteration += 1
-    return seg_points
-
-    def colorCode(r,b,g):
-        colorval = "#%02x%02x%02x" % (r, g, b)
-        return colorval
-
-    def solveQuad(a,b,c):
-        discriminant = ((b**2 - 4*a*c)**0.5)
-        x1 = (-b + disc)/(2*a)
-        x2 = (-b - disc)/(2*a)
-        return random.choice([x1, x2])
-    
-    def drawLandscape(self, canvas, terrainFill, startPixel, endPixel):
-        canvas.create_rectangle(startPixel[0], startPixel[1], endPixel[0], endPixel[1], fill = colorCode(87, 156, 208))
-        colorsDict = {'0': (195, 157, 224), '1': (158, 98, 204),
-                          '2': (130, 79, 138), '3': (68, 28, 99), '4': (49, 7, 82),
-                          '5': (23, 3, 38), '6': (240, 203, 163)}
-        colorChoice = random.randint(0,6)
-        colorTup = colorsDict[str(colorChoice)]
-        layer = []
-        for i in range(len(terrainFill)-1):
-            layer += [terrainFill[i]]
-            if layer[i+1][0]-layer[i][0] > 2:
-                m = float(terrainFill[i+1][1]-terrainFill[i][1])/(terrainFill[i+1][0]-terrainFill[i][0])
-                n = terrainFill[i][1]-m*terrainFill[i][0]
-                r = lambda x: m*x+n  # straight line
-                for j in range(terrainFill[i][0]+2, terrainFill[i+1][0],2): 
-                    layer += [(j, r(j))]
-        for (x, y) in layer:
-            canvas.create_line(x, y, x, self.terrain.bottom[1], fill=colorCode(colorTup[0], colorTup[1], colorTup[2]), width = 2)
-
-    
-class MyApp(App):
+           
+class MyApp(ModalApp):
+    width = 800
+    height = 800
     def appStarted(self):
-        #canvas dims
-        self.width = 800
-        self.height = 800
+       
         #add a select coordinates marker
         self.selectC1 = (-1,-1)
         self.selectC2 = (-1,-1)
-        #create a player
-        
-        #exiting a screen flag
-        self.exit = False
-        #frames dictory
-        self.frames = {
-            'home': [True, False, False],
-            'function': [False, False, False],
-            'gameMode': [False, False, False],
-            'help': False,
-            'statistics': False,
-            'share': False
-            'select': False}
-        
-        #important variables
-        self.buttonDim = [[120, 60]]
-        self.levels = []
 
-        #getting the images ready
-        self.setImages()
-        #getting the Player
+        #setting the modes
+        self.SplashScreenMode = SplashScreenMode()
+        self.HomeScreenMode = HomeScreenMode()
+        self.HelpScreenMode = HelpScreenMode()
+        self.StatsScreenMode = StatsScreenMode()
+        self.LevelsScreenMode = LevelsScreenMode()
+        self.GameMode1 = GameMode1()
+        self.wonGameScreen = wonGameScreen()
+        self.lostGameScreen = lostGameScreen()
+         #important variables
+        ModesList = [self.SplashScreenMode, self.HomeScreenMode, self.HelpScreenMode,self.StatsScreenMode, self.LevelsScreenMode, self.GameMode1]
         myPlayer = Player()
-        self.player = myPlayer
         
-        #getting the terrain ready
-        myTerrain = Terrain(400, 400, 5, self.player.currLevel)
-        self.terrain = myTerrain
-        
-        
-    #####
-    #For debugging purposes: Random set terrain
-    #######
-    def drawLevel(self, canvas, level):
-        for i in range(len(self.terrain.terrainPixels)):
-            for j in range(len(self.terrain.terrainPixels[0])):
-                if self.terrain.terrainPixels == 1:
-                    r = chunk_size//2
-                    (x0, y0, x1, y1) = self.getCellBounds(i, j, numRows, numCols, 200)
-                    cx = (x0 + x1)//2
-                    cy = (y0 + y1)//2
-                    canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill='green',width=0)
-                
-         #############################################################################
-        #Src: https://www.cs.cmu.edu/~112/notes/notes-animations-part1.html
-        ############################################################################
-    def getCell(self, x, y, numRows, numCols, margin):
+        for mode in ModesList:
+            mode.player = myPlayer
+            mode.buttonDim = [[120, 60]]
+            
+        self.setActiveMode(self.SplashScreenMode)
+
+    def setImages(mode):
+        path = 'skyBack.png'
+        mode.image1 = mode.loadImage(path)
+        mode.image1 = mode.image1.resize((self.width, self.height))
+        path = 'Logo.png'
+        mode.image2 = mode.loadImage(path)
+        mode.image2 = mode.image2.resize((self.width//2, self.height//4))
+        path = 'homeMenu/'
+        ind = 0
+        mode.imagesHome = []
+        for file in sorted(os.listdir(path)):
+            img = mode.loadImage("homeMenu/" + file)
+            img = img.resize((mode.width//3,mode.width//3))
+            mode.imagesHome.append(img)
+        iconPath = 'gameBar/'
+        mode.imagesBar = []
+        for file in sorted(os.listdir(iconPath)):
+            img = mode.loadImage(iconPath + file)
+            img = img.resize((60, 60))
+            mode.imagesBar.append(img)
+    
+    #############################################################################
+    #Src: https://www.cs.cmu.edu/~112/notes/notes-animations-part1.html
+    ############################################################################
+    @staticmethod
+    def getCell(x, y, numRows, numCols, margin):
         # aka "viewToModel"
         # return (row, col) in which (x, y) occurred or (-1, -1) if outside grid.
-        if (not self.pointInGrid(x, y,margin)):
+        if (not MyApp.pointInGrid(x, y,margin)):
             return (-1, -1)
-        gridWidth  = self.width - 2*margin
-        gridHeight = self.height - 2*margin
+        gridWidth  = MyApp.width - 2*margin
+        gridHeight = MyApp.height - 2*margin
         cellWidth  = gridWidth / numRows
         cellHeight = gridHeight / numCols
         row = int((y - margin) / cellHeight)
         col = int((x - margin) / cellWidth)
         return (row, col)
-    
-    def getCellBounds(self, row, col, numRows, numCols,margin):
+    @staticmethod
+    def getCellBounds(row, col, numRows, numCols,margin):
         # returns (x0, y0, x1, y1) corners/bounding box of given cell in grid
-        gridWidth  = self.width - 2*margin
-        gridHeight = self.height - 2*margin
+        gridWidth  = MyApp.width - 2*margin
+        gridHeight = MyApp.height - 2*margin
         cellWidth = gridWidth / numRows
         cellHeight = gridHeight / numCols
         x0 = margin + col * cellWidth
@@ -507,577 +126,967 @@ class MyApp(App):
         y0 = margin + row * cellHeight
         y1 = margin + (row+1) * cellHeight
         return (x0, y0, x1, y1)
-
-    def pointInGrid(self, x, y,margin):
+    @staticmethod
+    def pointInGrid(x, y,margin):
         # return True if (x, y) is inside the grid defined by app.
-        return ((margin <= x <= self.width-margin) and
-                (margin <= y <= self.height-margin))
-    #######################################################################
-    def setImages(self):
-        path = 'skyBack.png'
-        self.image1 = self.loadImage(path)
-        self.image1 = self.image1.resize((self.width, self.height))
-        path = 'Logo.png'
-        self.image2 = self.loadImage(path)
-        self.image2 = self.image2.resize((self.width//2, self.height//4))
-        path = 'homeMenu/'
-        ind = 0
-        self.imagesHome = []
-        for file in sorted(os.listdir(path)):
-            img = self.loadImage("homeMenu/" + file)
-            img = img.resize((self.width//3,self.width//3))
-            self.imagesHome.append(img)
-        iconPath = 'gameBar/'
-        self.imagesBar = []
-        for file in sorted(os.listdir(iconPath)):
-            img = self.loadImage(iconPath + file)
-            img = img.resize((60, 60))
-            self.imagesBar.append(img) 
-    def checkButtonPressed(self,cx, cy, event, height, width):
-        print(cx - (width/2), cx + (width/2), cy-(height/2), cy+(height/2))
+        return ((margin <= x <= MyApp.width-margin) and
+                (margin <= y <= MyApp.height-margin))
+
+def createButton(canvas, cx, cy, height,width, text, font, txtC, buttonC):
+        canvas.create_rectangle(cx-(width/2), cy-(height/2), cx+(width/2), cy+(height/2), fill=buttonC)
+        canvas.create_text(cx, cy, text= text, fill=txtC, font = font)
+
+def checkButtonPressed(cx, cy, event, height, width):
         if ((cx - (width/2) <= event.x <= cx+(width/2))
             and (cy-(height/2) <= event.y <= cy+(height/2))):
             return True
         return False
+        
+class SplashScreenMode(Mode):
+    def appStarted(mode):
+        mode.setImages()
+    def redrawAll(mode, canvas):
+        canvas.create_image(mode.width/2, mode.height/2,
+                            image=ImageTk.PhotoImage(mode.image1))
+        canvas.create_text(mode.width/2, 400, text = "Learn more about functions by finding your way through a mysterious path", font="Arial 20 bold")
+        createButton(canvas, 400, 600, mode.buttonDim[0][1], mode.buttonDim[0][0], "Play Now!", 'Arial 15 bold', 'white', 'pink')
+        canvas.create_image(mode.width/2, mode.height/3, image=ImageTk.PhotoImage(mode.image2))
 
-    def generateLevels(self):
-        roughness = [0.2, 0.3, 0.3, 0.4, 0.4, 0.4, 0.5, 0.6, 0.8]
-        seeds = [20,30,40,50,60,70,80,90,100]
-        for i in range(9):
-            self.levels.append(self.run(roughness[i], seeds[i]))
-
-    def drawHomeMenu(self,canvas):
-        canvas.create_rectangle(0,0,self.width,self.height)
-        positions = [((self.width/3 - self.width/6),(self.height/2 + self.height/4)),
-                     ((self.width/3 + self.width/6), (self.height/2 - self.height/4)),
-                     ((2*self.width/3 + self.width/6), (self.height/2 + self.height/4))]
-        ind = 0
-        for (cx,cy) in positions:
-            canvas.create_image(cx, cy,
-                            image=ImageTk.PhotoImage(self.imagesHome[ind]))
-            ind += 1
-        canvas.create_text(positions[0][0], self.width-50, text="Help", font= "Arial 15 bold")
-        canvas.create_text(positions[2][0], self.width-50, text="My Performance", font= "Arial 15 bold")
-
-    def drawHelpMenu(self,canvas):
-        canvas.create_text(self.width/2, 25, text="Help and Instructions", font="Helvetica 25 bold")
-        canvas.create_text(self.width/2, 400, text="", font="Arial 15")
+    def keyPressed(mode, event):
+        if (event.key == "Enter"):
+            name = mode.getUserInput('What is your name?')
+            if (name != None):
+                mode.player.name = name
+            else:
+                mode.player.name = "player1"
+            mode.app.setActiveMode(mode.app.HomeScreenMode)
     
-    #save player stats
-    def playerStats(player, functions):
-        #path to player stats
-        playerStatsP = "stats.csv"
-        if len(functions) < 3:
-            player.score += 10
-        if player.stars > 3:
-            player.score += 10
-        with open(playerStatsP, 'r') as file:
-            reader = csv.reader(file)
-            existingFile = []
-            for row in reader:
-                existingFile.append(row)
-            
-        with open(playerStatsP, 'w') as file:
-            writer = csv.writer(file)
-            writer.writerow([str(i) for i in range(1,10)])
-            #levels completed
-            existingFile[1][player.currLevel-1] = True
-            writer.writerow(existingFile[1])
-            #score
-            existingFile[2][player.currLevel-1] = player.score
-            writer.writerow(existingFile[2])
-            #stars collected
-            existingFile[3][player.currLevel-1] = player.stars
-            writer.writerow(existingFile[3])
-            #no of functions
-            existingFile[4][player.currLevel-1] = len(Function.functions)
-            writer.writerow(existingFile[4])
-    def drawStatsScreen(self,canvas):
-        canvas.create_text(self.width/2, self.height/4 - 30, text="Score: 0")
-        canvas.create_text(self.width/2, self.height/2 - 30, text="Stars: 0")
-        canvas.create_text(self.width/2, 3*self.height/4 - 30, text="Spikes: 0")
-        canvas.create_text(self.width/2, self.height - 30, text= "TNTs: 0")
-    def checkHomeMenuClicked(self,event):
-        positions = [((self.width/3 - self.width/6),(self.height/2 + self.height/4)),
-                     ((self.width/3 + self.width/6), (self.height/2 - self.height/4)),
-                     ((2*self.width/3 + self.width/6), (self.height/2 + self.height/4))]
-        s = self.width/3
+    def mousePressed(mode, event):
+        val = checkButtonPressed(400, 600, event, mode.buttonDim[0][1], mode.buttonDim[0][0])
+        if val:
+            name = mode.getUserInput('What is your name?')
+            if (name != None):
+                mode.player.name = name
+            else:
+                mode.player.name = "player1"
+            mode.app.setActiveMode(mode.app.HomeScreenMode)
+    def setImages(mode):
+        path = 'skyBack.png'
+        mode.image1 = mode.loadImage(path)
+        mode.image1 = mode.image1.resize((mode.width, mode.height))
+        path = 'Logo.png'
+        mode.image2 = mode.loadImage(path)
+        mode.image2 = mode.image2.resize((mode.width//2, mode.height//4))
+
+class HomeScreenMode(Mode):
+    def appStarted(mode):
+        mode.setImages()
+        mode.positions = [((mode.width/3 - mode.width/6),(mode.height/2 + mode.height/4)),
+                     ((mode.width/3 + mode.width/6), (mode.height/2 - mode.height/4)),
+                     ((2*mode.width/3 + mode.width/6), (mode.height/2 + mode.height/4))]
+    def setImages(mode):
+        path = 'homeMenu/'
         ind = 0
-        print(event.x,event.y)
-        for (cx, cy) in positions:
+        mode.imagesHome = []
+        for file in sorted(os.listdir(path)):
+            img = mode.loadImage("homeMenu/" + file)
+            img = img.resize((mode.width//3,mode.width//3))
+            mode.imagesHome.append(img)
+
+
+    def redrawAll(mode,canvas):
+        canvas.create_rectangle(0,0,mode.width,mode.height)
+        ind = 0
+        for (cx,cy) in mode.positions:
+            canvas.create_image(cx, cy,
+                            image=ImageTk.PhotoImage(mode.imagesHome[ind]))
+            ind += 1
+        canvas.create_text(mode.positions[0][0], mode.width-50, text="Help", font= "Arial 15 bold")
+        canvas.create_text(mode.positions[2][0], mode.width-50, text="My Performance", font= "Arial 15 bold")
+        
+    def mousePressed(mode, event):
+        mode.checkHomeMenuClicked(event)
+
+    def checkHomeMenuClicked(mode,event):
+        s = mode.width/3
+        ind = 0
+        for (cx, cy) in mode.positions:
             if (cx-s//2) <= event.x <= (cx+s//2) and (cy - s//2) <= event.y <= (cy + s//2):
                 if ind == 0:
-                    self.frames['help'] = True
-                    return True
+                    mode.app.setActiveMode(mode.app.HelpScreenMode)
                 elif ind == 2:
-                    self.frames['statistics'] = True
-                    return True
+                    mode.app.setActiveMode(mode.app.StatsScreenMode)
                 else:
-                    self.frames['gameMode'][0] = True
-                    return True
+                    mode.app.setActiveMode(mode.app.LevelsScreenMode)
             ind += 1
-        return False
+class HelpScreenMode(Mode):
+    def appStarted(mode):
+        mode.setImages()
+    
+    def redrawAll(mode,canvas):
+        canvas.create_text(mode.width/2, 25, text="Help and Instructions", font="Helvetica 25 bold")
+        canvas.create_image(mode.width/2, mode.height/2, image = ImageTk.PhotoImage(mode.help))
         
-    def levelMenu(self, canvas):
-        tempImage = self.imagesBar[0]
+    def setImages(mode):
+        path = 'Help.png'
+        mode.help = mode.loadImage(path)
+        mode.help = mode.help.resize((600,600))
+        
+    def keyPressed(mode, event):
+        if (event.key == "Left"):
+            mode.app.setActiveMode(mode.app.HomeScreenMode)
+
+class StatsScreenMode(Mode):
+    def redrawAll(mode, canvas):
+        mode.drawStatsScreen(canvas)
+        
+    def appStarted(mode):
+        mode.setImages()
+    def setImages(mode):
+        path = "stats/"
+        mode.statsImgs = []
+        for file in sorted(os.listdir(path)):
+            img = mode.loadImage(file)
+            img = img.resize((50, 50))
+            mode.statsImgs.append(img)
+    
+
+    def keyPressed(mode, event):
+        if (event.key == "Left"):
+            mode.app.setActiveMode(mode.app.HomeScreenMode)
+
+    def playerStats(mode):
+        #path to player stats
+        try:
+            playerStatsP = "stats.csv"
+            with open(playerStatsP, 'r') as file:
+                reader = csv.reader(file)
+                existingFile = []
+                for row in reader:
+                    existingFile.append(row)
+            stats = [0]*4
+            for row in existingFile:
+                stats[0] += row[1]
+                stats[1] += row[2]
+                stats[2] += row[3]
+                stats[3] += row[3]
+            return stats
+        except:
+            return None
+        
+
+    def drawStatsScreen(mode,canvas):
+        playerS = mode.playerStats()
+        if  playerS == None or len(playerS) == 0:
+            canvas.create_text(mode.width/2, mode.height/2, text="Play your first level now!")
+        else:
+            canvas.create_text(mode.width/2, 50, text="Your Performance")
+            canvas.create_image(mode.width/2, 75, img = ImageTk.PhotoImage(mode.statsImg[0]))
+            canvas.create_text(mode.width/2, mode.height/5 - 30, text=f"Total Points Earned: {stats[0]}")
+            canvas.create_image(mode.width/2, mode.height/5 + 50, img = ImageTk.PhotoImage(mode.statsImg[1]))
+            canvas.create_text(mode.width/2, 2*mode.height/5 - 30, text=f"Stars: {stats[1]}")
+            canvas.create_image(mode.width/2, 2*mode.height/5 + 50, img = ImageTk.PhotoImage(mode.statsImg[2]))
+            canvas.create_text(mode.width/2, 3*mode.height/5 - 30, text=f"Spikes: {stats[2]}")
+            canvas.create_image(mode.width/2, 3*mode.height/5 + 50, img = ImageTk.PhotoImage(mode.statsImg[3]))
+            canvas.create_text(mode.width/2, 4*mode.height/5 - 30, text= f"Functions Used: {stats[3]}")
+
+class LevelsScreenMode(Mode):
+    def appStarted(mode):
+        mode.setImages()
+
+    def setImages(mode):
+        iconPath = 'gameBar/'
+        mode.imagesBar = []
+        for file in sorted(os.listdir(iconPath)):
+            img = mode.loadImage(iconPath + file)
+            img = img.resize((60, 60))
+            mode.imagesBar.append(img)
+    def redrawAll(mode,canvas):
+        mode.levelMenu(canvas)
+            
+    def levelMenu(mode, canvas):
+        tempImage = mode.imagesBar[0]
         tempImage = tempImage.resize((25,25))
         canvas.create_image(25,25,image=ImageTk.PhotoImage(tempImage))
         index = 0
         margin = 50
         for row in range(3):
             for col in range(3):
-                if index + 1 in self.player.levelsCompleted:
-                    (x0, y0, x1, y1) = self.getCellBounds(row, col,3,3,margin)
+                if index + 1 in mode.player.levelsCompleted:
+                    (x0, y0, x1, y1) = mode.getCellBounds(row, col,3,3,margin)
                     canvas.create_rectangle(x0, y0, x1, y1,outline='black')
                     canvas.create_text((x0+x1)/2, (y0+y1)/2, text = f"{index + 1}", font = "Helvetica 20 bold", fill='black')
                     index += 1
 
         positions = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)]
         #add the next level
-        if (len(self.player.levelsCompleted) == 0):
+        if (len(mode.player.levelsCompleted) == 0):
             nextLevel = 1
-            (x0, y0, x1, y1) = self.getCellBounds(positions[nextLevel-1][0], positions[nextLevel-1][1],3,3,margin)
+            (x0, y0, x1, y1) = MyApp.getCellBounds(positions[nextLevel-1][0], positions[nextLevel-1][1],3,3,margin)
             canvas.create_rectangle(x0, y0, x1, y1,outline='black')
             canvas.create_text((x0+x1)/2, (y0+y1)/2, text = f"{nextLevel}",fill='black')
-        elif self.player.levelsCompleted[-1] + 1 < 10:
+        elif mode.player.levelsCompleted[-1] + 1 < 10:
             nextLevel = self.player.levelsCompleted[-1] + 1
-            (x0, y0, x1, y1) = self.getCellBounds(positions[nextLevel-1][0], positions[nextLevel-1][1],3,3,margin)
+            (x0, y0, x1, y1) = MyApp.getCellBounds(positions[nextLevel-1][0], positions[nextLevel-1][1],3,3,margin)
             canvas.create_rectangle(x0, y0, x1, y1,outline='black')
             canvas.create_text((x0+x1)/2, (y0+y1)/2, text = f"{nextLevel}",fill='black')
-    def addGameBar(self,canvas):
-        canvas.create_rectangle(0,0,self.width,100,fill='pink',width=6)
-        #iconHolder
-        margin = 50
-        for i in range(len(self.imagesBar)):
-            canvas.create_image(i*60 + margin, 50, image=ImageTk.PhotoImage(self.imagesBar[i]))
-        canvas.create_text(self.width-100, 25, text=f"{self.player.name}")
-        canvas.create_text(self.width-50,25, text=f"Score: {self.player.score}")
-        canvas.create_text(self.width-100,50, text=f"Stars: {self.player.stars}")
-        canvas.create_text(self.width-50,50, text=f"TNT: {self.player.TNTs}")
-        
-    def functionMenu(self,canvas):
-        index = 0
-        margin = 50
-        for row in range(3):
-            for col in range(2):
-                (x0, y0, x1, y1) = getCellBounds(self, row, col,3,2,margin)
-                canvas.create_rectangle(x0, y0, x1, y1,outline='black')
-                canvas.create_text((x0+x1)/2, (y0+y1)/2,text=Function.function[index],fill='black')
-                if self.player.functionsStock[index] == 0:
-                    canvas.create_text((x0+x1)/2, (y0+y1)/2 - margin/2,text= "None Remaining",fill='black')
-                index += 1
-                
-    def drawTerrain(self,canvas):
-        self.addGameBar(canvas)
-        self.drawLevel(canvas, self.player.currLevel)
-    def drawStars(self, canvas, finalLocs, numRows, numCols, r):
-        for (row,col) in finalLocs:
-            (x0,y0,x1,y1) = getCellBounds(self,row,col, numRows, numCols, 0)
-            center_x = (x0 + x1)/2
-            center_y = (y0 + y1)/2
-            points=[center_x-int(r*math.sin(2*math.pi/5)),
-                    center_y-int(r*math.cos(2*math.pi/5)),
-                    center_x+int(r*math.sin(2*math.pi/5)),
-                    center_y-int(r*math.cos(2*math.pi/5)),
-                    center_x-int(r*math.sin(math.pi/5)),
-                    center_y+int(r*math.cos(math.pi/5)),
-                    center_x,
-                    center_y-r,
-                    center_x+int(r*math.sin(math.pi/5)),
-                    center_y+int(r*math.cos(math.pi/5))]
-            canvas.create_polygon(points,outline='green',width=0,fill='yellow')
-    def drawSpikes(self,canvas, finalLocs, numRows, numCols, s):
-        for (row,col) in finalLocs:
-            (x0,y0,x1,y1) = getCellBounds(self,row,col, numRows, numCols, 0)
-            center_x = (x0+x1)/2
-            points = [x0,y1,x1,y1,center-x,y0]
-            canvas.create_polygon(points, outline='black',width=0,fill='grey')
-    def drawTNT(self,canvas, finalLocs, numRows, numCols, l):
-        for (row,col) in finalLocs:
-            (x0,y0,x1,y1) = getCellBounds(self,row,col, numRows, numCols, 0)
-            points = [x0,y0,x0,y1,x1,y1,x1,y0]
-            canvas.create_polygon(points,outline='black',width=2)
-            center_x = (x0 + x1)/2
-            center_y = (y1 + y0)/2
-            canvas.create_text(center_x,center_y,text="TNT",font="Arial 8 bold")
-        
-    def pickEntrance(self):
-        originalH = (400 - self.terrain.terrainPixels[0]) + 200
-        self.player.posX = 100
-        self.player.feetY = originalH-2
-    def drawEntrance(self,canvas):
-        canvas.create_line(0, originalH, 200, originalH, width = 7, fill="black")
-        #setting the position of the character
-        width, height = self.player.charFrames[0].size
-        canvas.create_image(self.powerX, self.player.feetY - width/2, image = ImageTk.PhotoImage(self.player.charFrames[0]))
-    def pickTarget(self):
-        finalH = self.terrain.terrainPixels[-1]
-        self.terrain.targetH = finalH
 
-    def drawTarget(self, canvas):
-        canvas.create_rectangle(700, self.terrain.targetH-50, 800, self.terrain.targetH, width = 6, fill="gold")
-        canvas.create_text(750, self.terrain.targetH-25, text="TARGET", font="Arial 15 bold")
-    def checkIfWon(self):
-        if self.width-50 <= self.posX <= self.width:
-            self.player.won = True
-    
-    def checkIfGameOver(self):
-        if collidesWithSpike(self) or collideWithTNT(self) or cannotMove(self) or fallDown(self):
-            self.player.dead = True
-            
-        
-            
-    def keyPressed(self, event):
-        if (event.key == "Left"):
-            if self.frames['statistics'] or self.frames['help']:
-                self.frames['home'][1] = True
-                self.frames['statistics'] = False
-                self.frames['help'] = False
-        if (self.frames['gameMode'][1] or self.frames['gameMode'][2]):
-            if event.key == 's':
-                self.frames['select'] = True
-        #hiding the selections
-        if (self.frames['gameMode'][1] or self.frames['gameMode'][2]):
-            if event.key == 'h':
-                self.frames['select'] = False
-        if (self.frames['gameMode'][2]):
-            if (event.key == "Right"):
-                (row, col) = self.getCellBounds(self.player.posX, self.player.posY,200)
-                #tbd
-                pass
-        
-
-    def redrawAll(self, canvas):
-        if self.frames['home'][0]:
-            self.drawSplashScreen(canvas)
-        elif self.frames['home'][1]:
-            self.drawHomeMenu(canvas)
-        elif self.frames['help']:
-            self.drawHelpMenu(canvas)
-        elif self.frames['statistics']:
-            self.drawStatsScreen(canvas)         
-        elif self.frames['function'][0] == True:
-            if self.currFunction == None:
-                self.functionMenu(canvas)
-            else:
-                self.parameterEntry(canvas)
-        elif  self.frames['function'][1] == True:
-            self.drawDeleteFunctions(canvas)
-        elif self.frames['function'][2] == True:
-            self.idEdit = canvas.create_window(300,300)
-        if self.frames['gameMode'][0]:
-            self.levelMenu(canvas)
-        elif self.frames['gameMode'][1]:
-            self.drawTerrain(canvas)
-            if self.frames['selectMode']:
-                self.drawHighlighterTool(canvas)
-        elif self.frames['gameMode'][2]:
-            self.drawTerrain(canvas)
-        """
-        if self.player.dead == True:
-            self.restartLevel(canvas)
-        elif self.player.won == True:
-            self.newLevel(canvas)
-        """
-
-    def drawHighlighterTool(self,canvas):
-        if self.coords1 != (-1,-1): 
-            canvas.create_line(self.coords1[0], self.coords1[1],
-                               self.coords1[0],0, fill='blue')
-        if self.coords2 != (-1,-1):
-            canvas.create_line(self.coords2[0], self.coords2[1],
-                               self.coords2[0],0, fill='blue')
-    def parameterEntry(self, canvas):   
-        #title
-        canvas.create_text(125, self.width/2, text=f'{self.player.currFunction[0]}',font= "Arial 30 bold")
-        #description
-        #description = queryDescription(self.player.currFunction.key)
-        #canvas.create_text(30, self.width/2, text= description,font= "Arial 30")
-        canvas.create_text(200, self.width/2, text= "Click on the text to change the value",font= "Arial 15")
-        #only completed for polynomial yet
-        if self.player.currFunction.category == "Polynomial":
-            degree = self.getUserInput("What is the degree of the polynomial?")
-            validationFlag = False
-            while validationFlag == False:
-                try:
-                    degree = int(degree)
-                    if degree < 6:
-                        validationFlag = True
-                except:
-                    degree = self.getUserInput("What is the degree of the polynomial?")
-            canvas.create_text(250, self.width/2, text= "Degree: self.player.currFunction[5]",font= "Arial 15 bold")
-            params = []
-            for i in range(len(degree+1)):
-                letter = string.ascii_uppercase[i]
-                params.append(letter)
-            finalExp = ""
-            for i in range(len(params)-1, -1, -1):
-                finalExp += f"{params[i]}x**{self.player.currFunction[5] - i - 1}", 
-            canvas.create_text(300, self.width/2, text= f"{finalExp}",font= "Arial 20 bold")
-            for i in range(len(params)):
-                canvas.create_text(400, 350 + i*20, text=f"Change coefficient {params[i]}")
-        elif self.player.currFunction.category == "Trignometry":
-            subcategory = self.getUserInput("Choose between sine and cos. Type 's' for sine and 'c' for cos.")
-            validationFlag = False
-            while subcategory != 's' and subcategory != 'c':
-                subcategory = self.getUserInput("Choose between sine and cos. Type 's' for sine and 'c' for cos.")
-            params = Function.params[self.player.currFunction.category]
-            for i in range(len(params)):
-                canvas.create_text(400, 350 + i*20, text=f"Change coefficient {params[i]}")
-        elif self.player.currFunction.category == "Circle" or self.player.currFunction.category == "Ellipse":
-            params = Function.params[self.player.currFunction.category]
-            for i in range(len(params)):
-                canvas.create_text(400, 350 + i*20, text=f"Change coefficient {params[i]}")
-
-        canvas.create_text(300, 350 + (len(params)-1)*20, text="Start coordinates. You can represent pi as \"pi\"")
-        canvas.create_text(500, 350 + (len(params)-1)*20, text="End coordinates. You can represent pi as \"pi\"")
-            
-            
-                
-        
-    def mousePressed(self, event):
-         if self.frames['home'][0] == True:
-            val = self.checkButtonPressed(400, 600, event, self.buttonDim[0][1], self.buttonDim[0][0])
-            if val:
-                self.frames['home'][0] = False
-                self.frames['home'][1] = True
-                name = self.getUserInput('What is your name?')
-                if (name != None):
-                    self.player.name = name
-                else:
-                    self.player.name = "player1"
-         elif self.frames['home'][1] == True:
-             val = self.checkHomeMenuClicked(event)
-             if val:
-                 self.frames['home'][1] = False
-         elif self.frames['function'][0] == True:
-            positions = [(0,0),(0,1),(1,0),(1,1),(2,0),(2,1)]
-            (row, col) = self.getCell(event.x, event.y, 3, 2, 50)
-            if (row,col) != (-1,-1):
-                for (rowF,colF) in positions:
-                    if (rowF,colF) == (row,col):
-                        ind = positions.index((rowF,colF))
-                        self.currFunction = [f'function{len(self.myFunctions)}', Function.functions[ind]]
-            if (row, col) == (-1,-1):
-                if 0 <= event.x <= 30 and 100 <= event.y <= 130:
-                    if self.currFunction != None:
-                        self.currFunction = None
-                    else:
-                        self.frames['function'][0] = False
-            if self.currFunction != None:
-                self.checkIfMenuPressed()
-                val = self.checkIfButtonPressed()
-                if val:
-                    self.player.myFunctions[self.currFunction[0]] = Function(self.player.currFunction[0], self.player.currFunction[1],
-                                                                      self.player.currFunction[2], self.player.currFunction[3], self.player.currFunction[4], self.currFunction[5]) 
-         elif self.frames['function'][1] == True:
-            (row,col) = self.getCell(event.x, event.y, len(self.myFunctions), 1, 150)
-            if (row,col) != (-1,-1):
-                for (rowF,colF) in positions:
-                    if (rowF,colF) == (row,col):
-                        ind = positions.find((rowF,colF))
-                        self.editFunction(Functions.functions[ind])
-            self.checkIfDeletePressed()
-            val = self.checkIfButtonPressed()
-            if val:
-                self.frames['function'][1] = False
-                self.frames['gameMode'][1] = True
-        
-         elif self.frames['function'][2] == True:
-            (row,col) = self.getCell(event.x, event.y, len(Function.myfunctions), 1, 150)
-            if (row,col) != (-1,-1):
-                for (rowF,colF) in positions:
-                    if (rowF,colF) == (row,col):
-                        ind = positions.find((rowF,colF))
-                        temp = Functions.myfunctions.pop(ind)
-                        if self.player.currFunction == temp:
-                            self.player.currFunction = None
-         elif self.frames['share']:
-            #check this again
-            snap = self.getSnapshot(app)
-            self.saveSnapshot()
-         elif self.frames['gameMode'][0] == True:
-             val = self.checkIfLevelPressed(event)
-             if val:
-                 self.frames['gameMode'][1] = True
-                 self.frames['gameMode'][0] = False
-         elif self.frames['gameMode'][1]:
-             #val = (close, change name, add, delete, edit, run)
-             val = self.checkIfGameBarPressed(event)
-             if val[0]:
-                 self.frames['gameMode'][1] = False
-                 self.frames['gameMode'][0] = True
-             elif val[1]:
-                 name = self.getUserInput('What is your name?')
-                 if (name != None):
-                     self.player.name = name
-             elif val[2]:
-                 self.frames['function'][0] = True
-             elif val[3]:
-                 self.frames['function'][1] = True
-             elif val[4]:
-                 self.frames['function'][2] = True
-             elif val[5]:
-                 self.frames['gameMode'][2] = True
-                 self.frames['gameMode'][1] = False
-                
-                
-    def checkIfGameBarPressed(self,event):
-        if 20 <= event.y <= 80 and 20 <= event.x <= 80:
-            return [True, False, False, False, False, False]
-        elif self.width-125 <= event.x <= self.width:
-            return [False, True, False, False, False, False]
-        elif 20 <= event.y <= 80 and 80 <= event.x <= 140:
-            return [False, False, True, False, False, False]
-        elif 20 <= event.y <= 80 and 140 <= event.x <= 200:
-            return [False, False, False, True, False, False]
-        elif 20 <= event.y <= 80 and 200 <= event.x <= 260:
-            return [False, False, False, True, False, False]
-        elif 20 <= event.y <= 80 and 260 <= event.x <= 320:
-            return [False, False, False, False, True, False]
-        elif 20 <= event.y <= 80 and 320 <= event.x <= 380:
-            return [False, False, False, False, False, True]
-        return [False, False, False, False, False, False]
-    def checkIfLevelPressed(self,event):
+    def mousePressed(mode, event):
+        mode.checkIfLevelPressed(event)
+    def checkIfLevelPressed(mode,event):
         if 0 <= event.x <= 50 and 0 <= event.y <= 50:
-            self.frames['home'][1] = True
-            self.frames['gameMode'][0] = False
-            return False
+            mode.app.setActiveMode(mode.app.HomeScreenMode)
         else:
             positions = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)]
-            (row,col) = self.getCell(event.x,event.y,3,3,50)
+            (row,col) = MyApp.getCell(event.x,event.y,3,3,50)
             if (row,col) != (-1,-1):
                 for (rowL,colL) in positions:
                     if (rowL,colL) == (row,col):
                         ind = positions.index((rowL,colL))
-                        self.player.currLevel = ind + 1
-                        return True
+                        mode.player.currLevel = ind + 1
+                        mode.app.setActiveMode(mode.app.GameMode1)
+
+class GameMode1(Mode):
+    def appStarted(mode):
+        mode.setImages()
+        mode.selectionMode = False
+        mode.init = True
+        mode.select1 = (-1,-1)
+        mode.select2 = (-1,-1)
+        mode.terrain = Terrain(600,600,2,mode.player.currLevel)
+        mode.colorChoice = random.randint(0,6)
+        mode.last_time = time.time()
+        mode.myAng = 90
+        #each level will have 3 frames
+        mode.frame = 0
+        mode.startInd = 0
+        mode.endInd = 0
+        mode.getStartEndInd(mode.terrain.terrainFills[mode.player.currLevel-1])
+        mode.currPt = 0
+        mode.addFrame = [False, False]
+        mode.deleteFrame = False
+        mode.editFrame = [False, False]
+        mode.entered = False
+        mode.spikesCounts = mode.terrain.spikesLocs[mode.player.currLevel-1]
+        mode.runFunction = False
+        mode.player.crossingFunction = False
+        mode.error = False
+
+        #mode.player.reset()
+
+    def setImages(mode):
+        iconPath = 'gameBar/'
+        mode.imagesBar = []
+        for file in sorted(os.listdir(iconPath)):
+            img = mode.loadImage(iconPath + file)
+            img = img.resize((60, 60))
+            mode.imagesBar.append(img)
+        mode.player_frames = []
+        for path in mode.player.frames_r:
+            img = mode.loadImage(path)
+            img = img.resize((40,40))
+            mode.player_frames.append(img)
+        (mode.playerWidth, mode.playerHeight) = mode.player_frames[0].size
+        #for functions panel
+        path = 'backButton.png'
+        mode.backButton = mode.loadImage(path)
+        mode.backButton = mode.backButton.resize((25,25))
+
+    def redrawAll(mode, canvas):
+        if mode.error == True:
+            mode.drawMessage(canvas, "Error in creating function")
+        mode.drawLevel(canvas, mode.terrain.terrainFills[mode.player.currLevel-1], mode.terrain.breaksTot[mode.player.currLevel-1], (100,100), (700, 700), mode.colorChoice)
+        mode.addGameBar(canvas)
+        mode.drawStars(canvas, 15)
+        mode.drawFunctions(canvas)
+        if mode.player.dead == True:
+            mode.lostGame()
+        elif mode.player.won == True:
+            mode.wonGame()
+        if mode.selectionMode:
+            mode.drawMessage(canvas, "Please press 's' to clear/exit selection mode")
+            mode.drawHighlighterTool(canvas)
+        if mode.addFrame[0] == True:
+            mode.functionMenu(canvas)
+        elif mode.addFrame[1] == True:
+            mode.parameterEntry(canvas)
+        
+            
+    def drawMessage(mode, canvas, message):
+        canvas.create_text(mode.width-350,50,text=message, font="Arial 10")
+    def mousePressed(mode, event):
+        mode.checkIfGameBarPressed(event)
+        if mode.selectionMode:
+            mode.updateSelection(event)
+        if mode.addFrame[0] == True:
+            val = mode.checkIfMenu1Pressed(event)
+            if val:
+                mode.addFrame[0] = False
+                mode.addFrame[1] = True
+            val = mode.checkIfBackPressed(event)
+            if val:
+                mode.addFrame[0] = False
+                mode.addFrame[1] = False
+        elif mode.addFrame[1] == True:
+            val = mode.checkIfAddButtonPressed(event)
+            mode.checkIfMenu2Pressed(event)
+            val2 = mode.checkIfBackPressed(event)
+            if val:
+                ind = Function.functions.index(mode.player.currFunction[1])
+                mode.player.functionsStock[ind] -= 1
+                mode.addFunctionToModel()
+                mode.addFrame[0] = False
+                mode.addFrame[1] = False
+            if val2:
+                mode.addFrame[0] = False
+                mode.addFrame[1] = False
+        
+
+    def updateSelection(mode, event):
+        if 100 <= event.y <= 700 and 100 <= event.x <= 700: 
+            if mode.select1 != (-1,-1) and mode.select2 != (-1,-1):
+                    mode.select1 = (-1,-1)
+                    mode.select2 = (-1,-1)
+            if mode.select1 == (-1,-1):
+                mode.select1 = (event.x, event.y)
+            elif mode.select2 == (-1,-1):
+                mode.select2 = (event.x, event.y)
+                if mode.select1[0] <= mode.player.posX <= mode.select2[0] or mode.select2[0] <= mode.player.posX <= mode.select1[0]:
+                    mode.select1 = (-1,-1)
+                    mode.select2 = (-1,-1)
+                    
+    def checkIfBackPressed(mode, event):
+        if 12.5 <= event.x <= 37.5 and (700-12.5) <= event.y <= (700+12.5):
+            return True
         return False
 
-    def functionMenu(self,canvas):
+    def drawDeleteMenu(mode,canvas,colors):
+        canvas.create_image(25, 700, image=ImageTk.PhotoImage(mode.backButton))
+        totNumFunctions = len(mode.player.myFunctions)
+        if totNumFunctions == 0:
+            canvas.create_text(mode.width//2, 750, text="No functions added yet", font="Arial 15 bold")
+            return
+        cols = totNumFunctions//3
+        
+        count = 0
+        for row in range(3):
+            for col in range(cols+1):
+                if count < len(mode.player.myFunctions):
+                    if colors[count] != None:
+                        canvas.create_rectangle((100 + col*100)-50, (725 + 25*row)-12.5, (100 + col*100)+50, (725 + 25*row)+12.5,
+                                                fill = 'yellow', width=0)
+                canvas.create_text(100 + col*100, 725 + 25*row, text = f"{mode.player.myFunctions[key[count]]}", font = "Arial 10 bold")
+                count += 1
+        createButton(canvas,650, 750, mode.buttonDims[0][1]//2, mode.buttonDims[0][0], "Delete", "Arial 10", 'white', 'pink')
+    def isDeleteMenuPressed(mode,event):
+        totNumFunctions = len(mode.player.myFunctions)
+        if totNumFunctions > 0:
+            cols = totNumFunctions//3
+            count = 0
+            removeFunctions  = []
+            for row in range(3):
+                for col in range(cols+1):
+                    if count < len(mode.player.myFunctions):
+                        if (100 + col*100)-50 <= event.x <= (100 + col*100)+50 and (725 + 25*row)-12.5 <= event.y <= (725 + 25*row)+12.5:
+                            mode.removeFunction.append(mode.keys[count])
+                            mode.colors[count] = 'select'
+                        count += 1
+
+    def checkDeleteButtonPressed(mode,event):
+        val = checkButtonPressed(650, 750, event, mode.buttonDims[0][1]//2, mode.buttonDims[0][0])
+        for key in mode.removeFunction:
+            mode.player.myFunctions.pop(key)
+        mode.deleteFrame = False
+        mode.refreshDeleteVars()
+
+    def refreshDeleteVars(mode):
+        mode.colors = [None]*len(mode.player.myFunctions)
+        mode.keys = []
+        for key in mode.player.myFunctions:
+            mode.keys.append(key) 
+        
+        
+    def keyPressed(mode, event):
+        if event.key == "s":
+            mode.selectionMode = not mode.selectionMode
+            if mode.selectionMode == False:
+                mode.select1 = mode.select2 = (-1,-1)
+        if event.key == "r":
+            mode.init = True
+        if event.key == "Right" and mode.player.falling == False:
+            mode.animate()
+            mode.collideWithStar(15)
+            mode.collideWithSpike()
+            mode.checkFallInGaps(mode.terrain.breaksTot[mode.player.currLevel-1])
+        if event.key == "Right" and mode.player.falling == True:
+            mode.falling()
+        if event.key == "p":
+            mode.player.currLevel = 4
+            mode.init = True
+        if event.key == "Down":
+            mode.moveFunction()
+    def timerFired(mode):
+        if mode.player.falling:
+            mode.falling()
+        if mode.runFunction:
+            mode.moveFunction()
+    def drawHighlighterTool(mode,canvas):
+        if mode.select1 != (-1,-1): 
+            canvas.create_line(mode.select1[0], 700,
+                               mode.select1[0],100, fill='blue')
+        if mode.select2 != (-1,-1):
+            canvas.create_line(mode.select2[0], 700,
+                               mode.select2[0],100, fill='blue')
+            
+    def drawLevel(mode, canvas, terrainFill, breakPts, startPixel, endPixel, colorChoice):
+        canvas.create_rectangle(startPixel[0], startPixel[1], endPixel[0], endPixel[1], fill = colorCode(117, 218, 255))
+        colorsDict = {'0': (195, 157, 224), '1': (158, 98, 204),
+                          '2': (130, 79, 138), '3': (68, 28, 99), '4': (49, 7, 82),
+                          '5': (23, 3, 38), '6': (240, 203, 163)}
+        
+        colorTup = colorsDict[str(colorChoice)]
+        layer = []
+        for i in range(mode.startInd, mode.endInd-1):
+            if i+1 < len(terrainFill):
+                transformedValX2 = terrainFill[i][0] - (mode.frame*600)
+                transformedValY2 = terrainFill[i][1]
+                transformedValX1 = terrainFill[i+1][0] - (mode.frame*600)
+                transformedValY1 = terrainFill[i+1][1]
+                if (100 <= transformedValX2 <= 700 or 100 <= transformedValX1 <= 700)  and breakPts[i] == False:
+                    layer += [(transformedValX2,transformedValY2)]
+                    if terrainFill[i+1][0]-terrainFill[i][0] > 1:
+                        m = float(transformedValY1-transformedValY2)/(transformedValX1-transformedValX2)
+                        n = transformedValY2-m*transformedValX2
+                        r = lambda x: m*x+n  # straight line formula
+                        valsArr = np.arange(transformedValX2+1, transformedValX1, 1)
+                        for val in valsArr:
+                            if 100 <= val <= 700:
+                                layer += [(val, r(val))]
+                        if mode.spikesCounts.count(i) != 0:
+                            if mode.init == True:
+                                print(i)
+                            mode.drawSpikes(canvas, transformedValX2, transformedValY2,transformedValX1, transformedValY1)
+
+        for (x, y) in layer:
+            canvas.create_line(x, y, x, 700, fill=colorCode(colorTup[0], colorTup[1], colorTup[2]), width = 1)
+        mode.completeLayer = layer  
+        mode.drawEntrance(canvas)
+        mode.drawTarget(canvas)
+        mode.entered = True
+        if mode.init != True:
+            #place character
+            canvas.create_image(mode.player.posX, mode.player.posY, image=ImageTk.PhotoImage(mode.player_frames[mode.player.currFrame]))
+            #place functions: TBD
+        else:
+            mode.levelRestart()
+
+    def levelRestart(mode):
+        mode.pickEntrance()
+        mode.select1 = (-1,-1)
+        mode.select2 = (-1,-1)
+        #mode.player.reset()
+        mode.init = False
+        
+
+    def falling(mode):
+        mode.player.posY += 5
+        if 600 <= mode.player.posY <= 700:
+            mode.player.dead = True
+        
+    def animate(mode):
+        mode.setImages()
+        if mode.player.posX < 100 and mode.frame == 0:
+            mode.player.posX += 10
+            now = time.time()
+            if now - mode.last_time > 0.05:
+                mode.last_time = now
+                mode.player.currFrame = (mode.player.currFrame + 1) % 4
+        elif mode.player.posX >= 700 - mode.playerWidth/2 and mode.frame == 2:
+            mode.player.posX += 10
+            now = time.time()
+            if now - mode.last_time > 0.05:
+                mode.last_time = now
+                mode.player.currFrame = (mode.player.currFrame + 1) % 4
+        elif mode.player.crossingFunction:
+            mode.player.posX += 10
+            functionCollided = mode.getCollidingFunction()
+            mode.player.posY -= dx*functionCollided.getDerivative(mode.player.posX-1)
+            mode.functionCollided.getDerivative(mode.player.posX-1)
+            mode.myGrad = functionCollided.getDerivative(mode.player.posX-1)
+            mode.myAng = math.degrees(math.atan(mode.myGrad))
+            #rotate image
+            if mode.myGrad > 0:
+                mode.player_frames[mode.player.currFrame] = mode.player_frames[mode.player.currFrame].rotate(mode.myAng)
+            if mode.myGrad < 0:
+                mode.player_frames[mode.player.currFrame] = mode.player_frames[mode.player.currFrame].rotate(360 - (180-mode.myAng))
+
+            if now - mode.last_time > 0.05:
+                mode.last_time = now
+                mode.player.currFrame = (mode.player.currFrame + 1) % 4
+        else:
+            clusterSize = 3
+            mode.myAng, mode.myGrad = mode.findGradient(mode.currPt, clusterSize)
+            if mode.myGrad > 0:
+                mode.player_frames[mode.player.currFrame] = mode.player_frames[mode.player.currFrame].rotate(mode.myAng)
+            if mode.myGrad < 0:
+                mode.player_frames[mode.player.currFrame] = mode.player_frames[mode.player.currFrame].rotate(360 - (180-mode.myAng))
+            
+            dx = mode.movePt()
+            mode.player.posX += dx
+            mode.player.posY += dx*mode.myGrad
+            now = time.time()
+            if now - mode.last_time > 0.05:
+                mode.last_time = now
+                mode.player.currFrame = (mode.player.currFrame + 1) % 4
+            if mode.player.posX >= 700 - mode.playerWidth/2: 
+                mode.frame += 1
+                mode.player.posX = 100
+                #update the start and end indices
+                mode.getStartEndInd(mode.terrain.terrainFills[mode.player.currLevel-1])
+                sizePerFrame = len(mode.terrain.terrainFills[mode.player.currLevel-1])//3
+                mode.player.posY = mode.terrain.terrainFills[mode.player.currLevel-1][mode.startInd][1]
+    
+    def movePt(mode):
+        layer = mode.terrain.terrainFills[mode.player.currLevel-1]
+        ind = mode.currPt
+        i = 1
+        while True:
+            if ind + i < len(layer):
+                if layer[ind+i][0] > layer[ind][0] + 5:
+                    mode.currPt = ind + i
+                    return layer[ind+i][0] - layer[ind][0]
+            i += 1
+        return 5
+        
+
+    def getStartEndInd(mode, terrainFill):
+        mode.startInd = mode.endInd
+        for i in range(len(terrainFill)):
+            if terrainFill[i][0] <= 100 + (mode.frame+1)*600:
+                mode.endInd = i
+            else:
+                break
+
+    def findGradient(mode, currPoint, clusterSize):
+        ind = currPoint
+        terrain = tuple(mode.terrain.terrainFills[mode.player.currLevel-1])
+        if ind + clusterSize + 1 <= len(terrain):
+            if terrain[ind][0] - terrain[ind+clusterSize][0] != 0:
+                gradient = (terrain[ind][1] - terrain[ind+clusterSize][1])/(terrain[ind][0] - terrain[ind+clusterSize][0])
+            else:
+                gradient = 0
+        else:
+            gradient = (terrain[ind][1] - terrain[ind-clusterSize][1])/(terrain[ind][0] - terrain[ind-clusterSize][0])
+        return (math.degrees(math.atan(gradient)), gradient)
+    
+    @staticmethod
+    def distance(x0, y0, x1, y1):
+        return ((x0 - x1)**2 + (y1 - y1)**2)**0.5
+    def pickEntrance(mode):
+        originalH =  mode.terrain.terrainFills[mode.player.currLevel-1][0][1]
+        mode.player.posX = 50
+        mode.player.posY = originalH - mode.playerWidth/2
+    def drawEntrance(mode,canvas):
+        originalH =  mode.terrain.terrainFills[mode.player.currLevel-1][0][1]
+        canvas.create_line(0, originalH, 100, originalH, width = 7, fill="black")
+
+    def drawTarget(mode, canvas):
+        finalH = mode.terrain.terrainFills[mode.player.currLevel-1][-1][1]
+        canvas.create_rectangle(700, finalH-50, 800, finalH, width = 6, fill="gold")
+        canvas.create_text(750, finalH-25, text="TARGET", font="Arial 15 bold")
+    
+    def addGameBar(mode,canvas):
+        canvas.create_rectangle(0,0,mode.width,100,fill='pink',width=6)
+        #iconHolder
+        margin = 50
+        for i in range(len(mode.imagesBar)):
+            canvas.create_image(i*60 + margin, 50, image=ImageTk.PhotoImage(mode.imagesBar[i]))
+        canvas.create_text(mode.width-100, 25, text=f"{mode.player.name}")
+        canvas.create_text(mode.width-50,25, text=f"Score: {mode.player.score}")
+        canvas.create_text(mode.width-100,50, text=f"Stars: {mode.player.stars}")
+        canvas.create_text(mode.width-50,50, text=f"TNT: {mode.player.TNTs}")
+
+    def drawSpikes(mode, canvas, startX, startY, endX, endY):
+        midPointX = (startX + endX)/2
+        midPointY = (startY + endY)/2
+        midPointY += 10
+        canvas.create_polygon(startX, startY, midPointX, midPointY, endX, endY, fill='black')
+        
+    def drawStars(mode, canvas, r):
+        for i in range(len(mode.terrain.starPos[mode.player.currLevel-1])):
+            (x, y) = mode.terrain.starPos[mode.player.currLevel-1][i]
+            transformedValX = x - (mode.frame*600)
+            if 100 <= transformedValX <= 700:
+                center_x = transformedValX
+                center_y = y - r
+                points=[center_x-int(r*math.sin(2*math.pi/5)),
+                        center_y-int(r*math.cos(2*math.pi/5)),
+                        center_x+int(r*math.sin(2*math.pi/5)),
+                        center_y-int(r*math.cos(2*math.pi/5)),
+                        center_x-int(r*math.sin(math.pi/5)),
+                        center_y+int(r*math.cos(math.pi/5)),
+                        center_x,
+                        center_y-r,
+                        center_x+int(r*math.sin(math.pi/5)),
+                        center_y+int(r*math.cos(math.pi/5))]
+                canvas.create_polygon(points,outline='green',width=0,fill='yellow')
+            
+    def checkIfGameBarPressed(mode,event):
+        mode.error = False
+        if 20 <= event.y <= 80 and 20 <= event.x <= 80:
+            mode.app.setActiveMode(mode.app.HomeScreenMode)
+        elif mode.width-125 <= event.x <= mode.width and 20 <= event.y <= 80:
+            name = mode.getUserInput('What is your name?')
+            if (name != None):
+                mode.player.name = name
+        elif 20 <= event.y <= 80 and 80 <= event.x <= 140:
+            mode.addFrame[0] = True
+        elif 20 <= event.y <= 80 and 140 <= event.x <= 200:
+            mode.editFrame = True
+        elif 20 <= event.y <= 80 and 200 <= event.x <= 260:
+            mode.deleteFrame[0] = True
+        elif 20 <= event.y <= 80 and 260 <= event.x <= 320:
+              mode.runFunction = True
+              mode.refreshDeleteVars()
+
+    def functionMenu(mode,canvas):
         index = 0
         margin = 50
+        canvas.create_image(50, 720, image=ImageTk.PhotoImage(mode.backButton))
+        for row in range(1):
+            for col in range(6):
+                cx = 125 + 100*col
+                cy = 750
+                l =  50
+                canvas.create_rectangle(cx-l, cy-l, cx+l, cy+l,outline='black')
+                if mode.player.functionsStock[col] != 0:
+                    canvas.create_text(cx, cy, text= Function.functions[col], font= "Arial 10 bold")
+    
+    def parameterEntry(mode, canvas):
+        canvas.create_image(25, 700, image=ImageTk.PhotoImage(mode.backButton))
+        #title
+        canvas.create_text(50, 725, text= mode.player.currFunction[1],font= "Arial 10 bold")
+        #name/key
+        mode.player.currFunction[0] = f"function{len(mode.player.myFunctions)}"
+        canvas.create_text(50, 740, text= f'function{len(mode.player.myFunctions)}',font= "Arial 10 bold")
+        #description
+        #description = queryDescription(mode.player.currFunction[0])
+        #canvas.create_text(30, self.width/2, text= description,font= "Arial 30")
+        mode.player.currFunction[7] = polynomial.degrees[mode.player.currFunction[1]] 
+        canvas.create_text(50, 760, text= f"Degree: {mode.player.currFunction[7]}",font= "Arial 10 bold")
+        params = polynomial.params[mode.player.currFunction[1]]
+        canvas.create_text(125, 750, text=f"{polynomial.getExpression(mode.player.currFunction[1],mode.player.currFunction[7])}", font = "Arial 10 bold")
+        count = 0
         for row in range(3):
             for col in range(2):
-                (x0, y0, x1, y1) = getCellBounds(self, row, col,3,2,margin)
-                canvas.create_rectangle(x0, y0, x1, y1,outline='black')
-                canvas.create_text((x0+x1)/2, (y0+y1)/2,text=Function.function[index],fill='black')
-                if self.player.functionsStock[index] == 0:
-                    canvas.create_text((x0+x1)/2, (y0+y1)/2 - margin/2,text= "None Remaining",fill='black')
-                index += 1
+                if count < len(params):
+                    canvas.create_text(250 + 150*col, 725 + 25*row, text=f"Change coefficient {params[count]}")
+                count += 1
+        canvas.create_text(550, 725, text="Start coordinates.")
+        canvas.create_text(550, 775, text="End coordinates.")
+        createButton(canvas, 700, 750, mode.buttonDim[0][1]//2, mode.buttonDim[0][0], "Add function" , "Arial 10 bold", 'white', 'pink')
+        
+    def checkIfMenu2Pressed(mode, event):
+        length = 50
+        count = 0
+        for row in range(3):
+            for col in range(2):
+                if  (250 + 150*col)-length <= event.x <= (250 + 150*col)+length:
+                    if (725 + 25*row)-length <= event.y <= (725 + 25*row)+length:
+                        if count < len(polynomial.params[mode.player.currFunction[1]]):
+                            param = mode.getUserInput(f"What is the value of {polynomial.params[mode.player.currFunction[1]][count]}?")
+                            try:
+                                mode.player.currFunction[5][count] = float(param)
+                                break
+                            except:
+                                pass
+                                
+                count += 1
+        if 550 - length <= event.x <= 550 + length and 725 - length <= event.y <= 725 + length:
+            while True:
+                x = mode.getUserInput(f"What is the value of start x coordinate?")
+                try:
+                    float(x)
+                    break
+                except:
+                    x = mode.getUserInput(f"What is the value of start x coordinate?")
+            mode.player.currFunction[2] = float(x)
+        elif 550 - length <= event.x <= 550 + length and 775 - length <= event.y <= 775 + length:
+            while True:
+                x = mode.getUserInput(f"What is the value of end x coordinate?")
+                try:
+                    float(x)
+                    break 
+                except:
+                    x = mode.getUserInput(f"What is the value of end x coordinate?")
+            mode.player.currFunction[3] = float(x)
 
-    def drawSplashScreen(self,canvas):
-        canvas.create_image(self.width/2, self.height/2,
-                            image=ImageTk.PhotoImage(self.image1))
-        self.createButton(canvas, 400, 600, self.buttonDim[0][1], self.buttonDim[0][0], "Play Now!", 'Arial 15 bold', 'white', 'pink')
-        canvas.create_image(self.width/2, self.height/3, image=ImageTk.PhotoImage(self.image2))
-
-    def createButton(self, canvas, cx, cy, height,width, text, font, txtC, buttonC):
-        canvas.create_rectangle(cx-(width/2), cy-(height/2), cx+(width/2), cy+(height/2), fill=buttonC)
-        canvas.create_text(cx, cy, text= text, fill=txtC, font = font)
-
-
-    def checkIfButtonPressed(self, event):
-        if (400 - (width/2) <= event.x <= 400 + (width/2)) and
-            (450 - height/2) <= event.y <= (450 - height/2):
-                return True
-        return False
-    def functionEditor(self,canvas):
-        #title
-        canvas.create_text(15, self.width/2, text=f'{self.player.currFunction.key}',font= "Arial 30 bold")
-        #description
-        description = queryDescription(self.player.currFunction.key)
-        canvas.create_text(30, self.width/2, text= description,font= "Arial 30")
-        #params and editing
-        if self.player.currFunction.key != "piecewise":
-            params = Functions.params[self.player.currFunction.name]
-            for i in range(len(params)):
-                self.create_text(self.width/2-25, 55 + i*20, text=f'{params[i]}')
-                self.round_rectangle(canvas, self.width/2 + 25, 45 + i*20, self.width/2+40, 60 + i*20, 15)
-        self.createButton(canvas, 400, 450, self.buttonDims[0][1], self.buttonDims[0][0], "Add function", "Arial 15 bold",
-                          "white", "black")
-    def drawStars(self, canvas, finalLocs, numRows, numCols, r):
-        for (row,col) in finalLocs:
-            (x0,y0,x1,y1) = getCellBounds(self,row,col, numRows, numCols, 0)
-            center_x = (x0 + x1)/2
-            center_y = (y0 + y1)/2
-            points=[center_x-int(r*math.sin(2*math.pi/5)),
-                    center_y-int(r*math.cos(2*math.pi/5)),
-                    center_x+int(r*math.sin(2*math.pi/5)),
-                    center_y-int(r*math.cos(2*math.pi/5)),
-                    center_x-int(r*math.sin(math.pi/5)),
-                    center_y+int(r*math.cos(math.pi/5)),
-                    center_x,
-                    center_y-r,
-                    center_x+int(r*math.sin(math.pi/5)),
-                    center_y+int(r*math.cos(math.pi/5))]
-            canvas.create_polygon(points,outline='green',width=0,fill='yellow')
-
-    #player dead = restart Level
-    def restartLevel(self, canvas):
-        if self.player.dead == True:
-            canvas.create_rectangle(0,0,self.width,self.height,fill="black")
-            canvas.create_text(self.width//2, self.height//2, text = "Sorry try again",
-                               color="white", font= "Helvetica 30 bold")
-            self.createButton(canvas, (self.width//2), (self.height//2 + 75), self.buttonsDim[0][0],
-                              self.buttonsDim[0][1], "Restart", 'Arial 30 bold', 'white', 'pink')
-    #player won = new level
-    def newLevel(self,canvas):
-        if self.player.won:
-            if self.player.currLevel < 10:
-                canvas.create_rectangle(0,0,self.width,self.height,fill="black")
-                canvas.create_text(self.width//2, self.height//2, text = "Level Completed",
-                                   color="white", font="Helvetica 30 bold")
-                canvas.create_text(self.width//2, (self.height//2 + 30),
-                                   text = f'Score: {self.player.score}, Stars: {self.player.stars}, Spikes: {self.player.spikes}',
-                                   color="white", font="Helvetica 30 bold")
-                self.createButton(canvas, (self.width//2), (self.height//2 + 75), self.buttonsDim[0][0],
-                                  self.buttonsDim[0][1], "Restart", 'Arial 30 bold', 'white', 'pink')
-            else:
-                canvas.create_rectangle(0,0,self.width,self.height,fill="black")
-                canvas.create_text(self.width//2, self.height//2, text = "Level Completed",
-                                   color="white", font="Helvetica 30 bold")
-                canvas.create_text(self.width//2, (self.height//2 + 30),
-                                   text = f'Score: {self.player.score}, Stars: {self.player.stars}, Spikes: {self.player.spikes}',
-                                   color="white", font="Helvetica 30 bold")
-                self.createButton(canvas, (self.width//2), (self.height//2 + 75), self.buttonsDim[0][0],
-                                  self.buttonsDim[0][1], "Complete Game", 'Arial 30 bold', 'white', 'pink')
-
-"""
-         def checkWon(self):
-             if almostEquals(self.player.posX , self.terrain.targetX)
-                and almostEquals(self.player.posY, self.terrain.targetY):
-                    self.player.won = True
-                    self.player.levelsCompleted += [self.player.currLevel]
-                    self.player.currLevel +=1 
-    
-         def keyPressed(app,event):
-            if (event.key == "s"):
-                self.selectMode = True
-            if (event.key == "r"):
-                self.flagR = True
-
-                
-
-"""
-
-"""
-     if self.player.won:
-        if self.checkButtonPressed(event, self.width/2, self.width/2 + 75,
-                                   buttonDims[0][1], buttonsDims[0][0]):
-            if self.player.currLevel < 10:
-                self.frames['gameMode'][0] = True
-            else:
-                self.frames['home'][1] = True
+    def addFunctionToModel(mode):
+        if mode.select1 == (-1, -1) or mode.select2 == (-1,-1):
+            mode.error = True
+            return
+        if mode.select1[0] < mode.select2[0]:
+            mode.player.currFunction[4] = [mode.select1, mode.select2]
+        else:
+            mode.player.currFunction[4] = [mode.select2, mode.select1]
             
-     elif self.player.dead:
-        if self.checkButtonPressed(event, self.width/2, self.width/2 + 75,
-                                   buttonDims[0][1], buttonsDims[0][0]):
-            self.frames['gameMode'][1] = True
-"""
+        for attr in mode.player.currFunction:
+            if attr == None:
+                mode.error = True
+                return 
+        
+        mode.player.myFunctions[mode.player.currFunction[0]] = polynomial(mode.player.currFunction[0], mode.player.currFunction[1], mode.player.currFunction[2],
+                                                                       mode.player.currFunction[3], mode.player.currFunction[4], mode.player.currFunction[5],
+                                                                       mode.player.currFunction[6], mode.player.currFunction[7])
+        mode.player.score += 10*(Function.functions.index(mode.player.currFunction[1])+1)
+        mode.placeFunction()
+        
+    def collideWithStar(mode, r):
+        star_pos_remove = []
+        for i in range(len(mode.terrain.starPos[mode.player.currLevel-1])):
+            (x, y) = mode.terrain.starPos[mode.player.currLevel-1][i]
+            transformedValX = x - (mode.frame*600)
+            if 100 <= transformedValX <= 700:
+                center_x = transformedValX
+                center_y = y - r
+                if y <= mode.player.posY <= center_y + r and center_x - r <= mode.player.posX <= center_x + r:
+                    mode.player.stars += 1
+                    mode.player.score += 10
+                    star_pos_remove.append((x,y))
+        for i in range(len(star_pos_remove)):
+            mode.terrain.starPos[mode.player.currLevel-1].remove(star_pos_remove[i])
+
+    def collideWithSpike(mode):
+        layer = mode.terrain.terrainFills[mode.player.currLevel - 1]
+        for i in range(len(mode.spikesCounts)):
+            transformedX = mode.player.posX  + (mode.frame*600)
+            feetY = mode.player.posY + mode.playerHeight/2
+            ind1 = mode.spikesCounts[i]
+            ind2 = ind1 + 1
+            if layer[ind1][0] < transformedX < layer[ind2][0] and layer[ind1][1] < feetY < layer[ind2][1]:
+                    mode.player.spikes += 1
+                    if mode.player.score > 10:
+                        mode.player.score -= 10
+                    mode.player.dead = True
+    
+    def checkIfMenu1Pressed(mode, event):
+        for col in range(6):
+            l = 50
+            cx = 125 + 100*col
+            cy = 750
+            if cx - l <= event.x <= cx + l:
+                if cy - l <= event.y <= cy + l:
+                    if Function.functions[col] == "Square Root":
+                        mode.player.currFunction = [None, None, None, None, None, None, [0,0], 0.5]
+                    else:
+                        degree = polynomial.degrees[Function.functions[col]]
+                        mode.player.currFunction = [None, None, None, None, None, [None]*(degree+1), [0,0], degree]
+                    mode.player.currFunction[1] = Function.functions[col]
+                    return True
+        return False
+    def checkIfAddButtonPressed(mode, event):
+        return checkButtonPressed(650, 750, event, mode.buttonDim[0][1]//2, mode.buttonDim[0][0])
+
+    def checkFallInGaps(mode, breakPts):
+        transformedX = mode.player.posX  + (mode.frame*600)
+        for i in range(len(breakPts)):
+            if breakPts[i] and not mode.player.crossingFunction:
+                x1 = mode.terrain.terrainFills[mode.player.currLevel-1][i][0]
+                x2 = mode.terrain.terrainFills[mode.player.currLevel-1][i+1][0]
+                if x1 <= transformedX <= x2:
+                    mode.player.falling = True
+                    mode.player.posX += mode.playerWidth/2
+                
+    def lostGame(mode):
+        mode.saveStats()
+        mode.app.setActiveMode(mode.app.lostGameScreen)
+    def wonGame(mode):
+        mode.app.setActiveMode(mode.app.wonGameScreen)
+        mode.saveStats()
+
+    def updateFunctionsStock(mode):
+        for function in mode.player.myFunctions:
+            category = function.category
+            ind = Function.functions.index(category)
+            mode.player.functionsStock[ind] -= 1
+
+    def saveStats(mode):
+        path = "stats.csv"
+        fields = [mode.player.currLevel, mode.player.score, mode.player.stars, mode.player.spikes, len(mode.player.myFunctions)]
+        with open(path, 'w') as file:
+            writer = writer.csv(file)
+            writer.writerow(fields)
+
+    def placeFunction(mode):
+        #selecting the last function to place
+        stF = (mode.player.myFunctions[mode.player.currFunction[0]].startCoords)
+        endF = (mode.player.myFunctions[mode.player.currFunction[0]].endCoords)
+        transformedStF = stF + (600*mode.frame)
+        transformedEndF = endF + (600*mode.frame)
+        stP = (mode.player.myFunctions[mode.player.currFunction[0]].showCoords[0][0])
+        endP = (mode.player.myFunctions[mode.player.currFunction[0]].showCoords[1][0])
+        samples = ((endP - stP)//5)+1
+        pixelInterval = np.arange(stP, endP, samples)
+        coords = mode.player.myFunctions[mode.player.currFunction[0]].getCoords(samples)
+        mode.player.myFunctions[mode.player.currFunction[0]].setPixelInterval(pixelInterval)
+        mode.player.myFunctions[mode.player.currFunction[0]].setCartesianCoords(coords)
+        mode.player.myFunctions[mode.player.currFunction[0]].setTransformedCoords(coords)
+        minY = mode.findMin(coords)
+        maxY = mode.findMax(coords)
+        diff = 100-maxY
+        mode.player.myFunctions[mode.player.currFunction[0]].applyTransformation([0,maxY+diff])
+      
+            
+    def findMin(mode,coords):
+        y = []
+        for i in range(len(coords)):
+            y.append(coords[i][1])
+        return min(y)
+    def findMax(mode,coords):
+        y = []
+        for i in range(len(coords)):
+            y.append(coords[i][1])
+        return max(y)
+    def drawFunctions(mode, canvas):
+        for key in mode.player.myFunctions:
+            function = mode.player.myFunctions[key]
+            pixelInterval = function.pixelInterval
+            finalCoords = function.finalCoords
+            for i in range(len(pixelInterval)):
+                transformedX = pixelInterval[i] - (600*mode.frame)
+                if 100 <= finalCoords[i][1] <= 700: 
+                    canvas.create_oval(pixelInterval[i] - 5, finalCoords[i][1] - 5, pixelInterval[i] + 5, finalCoords[i][1] + 5, fill='blue')
+
+    def moveFunction(mode):
+        for key in mode.player.myFunctions:
+            function = mode.player.myFunctions[key]
+            if function.move == True:
+                function.applyTransformation([0,5])
+                #mode.functionCollidesWithTerrain(key)
+        
+    def functionCollidesWithTerrain(mode, key):
+        layer = mode.completeLayers
+        function = mode.player.myFunctions[mode.player.currFunction[0]]
+        for i in range(len(function.finalCoords)):
+            for j in range(len(layer)):
+                if (GameMode1.distance(function.pixelInterval[i][0], layer[j][0], function.finalCoords[i][1], layer[j][1]) <= 5):
+                    mode.player.myFunctions[key].move = False
+                
+    
+class lostGameScreen(Mode):
+    def appStarted(mode):
+        mode.setImages()
+
+    def setImages(mode):
+        path = 'lost.png'
+        mode.lost = mode.loadImage(path)
+        mode.lost = mode.lost.resize((100,100))
+
+    def redrawAll(mode, canvas):
+        canvas.create_rectangle(0,0,mode.width,mode.height,fill='black')
+        canvas.create_text(mode.width/2, 300, text="Oh no! You lost", font = "Arial 40 bold",fill='white')
+        info = [mode.player.score, mode.player.stars, mode.player.spikes, len(mode.player.myFunctions)]
+        infoTxt = ["Score", "Stars", "Spikes", "Functions Used"]
+        for i in range(len(info)):
+            canvas.create_text(mode.width, 400 + 25*i, text=f"{infoTxt[i]}: {info[i]}", fill='white', font="Arial 20")
+        create_button(canvas, mode.width, 550, buttonsDim[0][1], mode.buttonsDim[0][0], "Restart", "Arial 15 bold", 'white', 'pink')
+    def mousePressed(mode, event):
+        val = checkIfButtonPressed(mode.width/2, 550, event, mode.buttonDim[0][1], mode.buttonDim[0][0])
+        if val:
+            mode.app.setActiveMode(mode.app.GameMode1)
+            mode.deleteEntry()
+    def deleteEntry(mode):
+        f = open("stats.csv", "r+w")
+        lines=f.readlines()
+        lines=lines[:-1]
+
+        cWriter = csv.writer(f, delimiter=',')
+        for line in lines:
+            cWriter.writerow(line)
+
+class wonGameScreen(Mode):
+    def appStarted(mode):
+        mode.setImages()
+        
+
+    def setImages(mode):
+        path = 'trophy.png'
+        mode.won = mode.loadImage(path)
+        mode.won = mode.won.resize((100,100))
+
+    def redrawAll(mode, canvas):
+        canvas.create_rectangle(0,0,mode.width,mode.height,fill='black')
+        canvas.create_image(mode.width/2, 150, image=ImageTk.PhotoImage(mode.won))
+        canvas.create_text(mode.width/2, 300, text="Yay! You passed this level", font = "Arial 40 bold",fill='white')
+        info = [mode.player.score, mode.player.stars, mode.player.spikes, len(mode.player.myFunctions)]
+        infoTxt = ["Score", "Stars", "Spikes", "Functions Used"]
+        for i in range(len(info)):
+            canvas.create_text(mode.width, 400 + 25*i, text=f"{infoTxt[i]}: {info[i]}", fill='white', font="Arial 20")
+        if mode.player.currLevel < 5:
+            create_button(canvas, mode.width, 550, buttonsDim[0][1], mode.buttonsDim[0][0], "Next Level", "Arial 15 bold", 'white', 'pink')
+        else:
+            create_button(canvas, mode.width, 550, buttonsDim[0][1], mode.buttonsDim[0][0], "Your done!", "Arial 15 bold", 'white', 'pink')
+            
+            
+    def mousePressed(mode, event):
+        val = checkIfButtonPressed(mode.width/2, 550, event, mode.buttonDim[0][1], mode.buttonDim[0][0])
+        if val:
+            if mode.player.currLevel < 5:
+                mode.player.currLevel += 1 
+                mode.app.setActiveMode(mode.app.GameMode1)
+            else:
+                mode.app.setActiveMode(mode.app.HomeScreenMode)
+                
+    def checkIfBackPressed(mode, event):
+        return checkIfButtonPressed(50, 620, event, mode.buttonDim[0][1], mode.buttonDim[0][0])        
 
 
+def getCollidingFunction(mode):
+    for function in mode.player.myFunctions:
+        function = mode.player.myFunctions[key]
+        feetY = mode.player.posY - mode.playerHeight/2
+        pixelInterval = function.pixelInterval
+        finalCoords = function.finalCoords
+        for i in range(len(finalCoords)):
+            if finalCoords[i][1] - 5 <= feetY <= finalCoords[i][1] + 5 and pixelInterval[i] - 5 <= mode.player.posX <= pixelInterval[i] + 5:
+                    mode.player.crossingFunction = True
+                    return function
+            else:
+                mode.player.crossingFunction = False
+                return None
+                
+    
+def reflect(mode, key):
+    reflectCoords = None
+    if key == "h":
+        cartesianCoords = mode.player.myFunctions[mode.player.currFunction[0]].cartesianCoords
+        reflectCoords = Function.reflectH(coords)
+    elif key == "v":
+        cartesianCoords = mode.player.myFunctions[mode.player.currFunction[0]].cartesianCoords
+        reflectCoords = Function.reflectV(coords)
+    if reflectCoords != None:
+        mode.player.myFunctions[mode.player.currFunction[0]].setTransformedCoords(reflectCoords)
+        minY = mode.findMin(reflectCoords)
+        maxY = mode.findMax(reflectCoords)
+        diff = 100-maxY
+        mode.player.myFunctions[mode.player.currFunction[0]].applyTransformation([0,maxY+diff])
 
+def rotate(mode):
+    angle = 20
+    cartesianCoords = mode.player.myFunctions[mode.player.currFunction[0]].cartesianCoords
+    pixelInterval = mode.player.myFunctions[mode.player.currFunction[0]].pixelInterval
+    for i in range(len(cartesianCoords)):
+        dist = GameMode1.distance(pixelInterval[i], cartesianCoords[i][1], 0, 0)
+        pixelInterval[i] *= math.cos(angle)
+        cartesianCoords[i][1] *= math.sin(angle) 
+    mode.player.myFunctions[mode.player.currFunction[0]].setTransformedCoords(cartesianCoords)
+    minY = mode.findMin(cartesianCoords)
+    maxY = mode.findMax(cartesianCoords)
+    diff = 100-maxY
+    mode.player.myFunctions[mode.player.currFunction[0]].applyTransformation([0,maxY+diff])
+#TODO today - delete function, spike stars, function crossing, lost game + won game
+#Possible imrpovements (tom) - messagebox addition + energy bar + reflect 
+    
 def main():
     MyApp(width=800,height=800)
 
