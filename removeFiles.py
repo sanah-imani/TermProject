@@ -7,3 +7,6 @@ def removeTempFiles(path, suffix='.DS_Store'):
         for filename in os.listdir(path):
             removeTempFiles(path + '/' + filename, suffix)
 removeTempFiles('gameBar')
+removeTempFiles('stats')
+removeTempFiles('stickman')
+removeTempFiles('homeMenu')
