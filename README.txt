@@ -1,7 +1,7 @@
 Project Description 
 
-
-Title: Addventure
+Demo Video Link: https://youtu.be/0hC60tEvJAs
+Title: Function Fever
 **ALL CODE HAS BEEN WRITTEN OR SOURCED BY SANAH IMANI**
 
 An interactive game that requires users to use their math skills to navigate through terrains. A linear function to complete a break? A piecewise function to create a “bridge”? Using parabolas to help collect a star? Complete your path using a range of functions, keep in line with physics, and run your avatar to maximise your reward toward your target. This version consists of 5 levels where you need to move your avatar from the entrance to the target but need to fix the breaks and collect awards using functions.
